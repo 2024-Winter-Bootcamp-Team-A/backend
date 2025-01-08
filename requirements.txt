@@ -1,6 +1,0 @@
-requests
-Django
-python-dotenv
-drf_yasg
-psycopg2
-djangorestframework
