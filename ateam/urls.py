@@ -19,6 +19,7 @@ from django.urls import path, re_path
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework.permissions import AllowAny
+from django.urls import path, include
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -30,6 +31,7 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
+    path('api/v1/books/', include('books.urls')),  # books 앱의 API URL 포함
 ]
 
 urlpatterns += [
