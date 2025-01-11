@@ -32,6 +32,7 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('api/v1/books/', include('books.urls')),  # books 앱의 API URL 포함
+    path('api/v1/users/', include('users.urls')),
 ]
 
 urlpatterns += [
