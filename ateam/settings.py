@@ -57,6 +57,16 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# 세션 쿠키 설정
+SESSION_COOKIE_NAME = 'sessionid'  # 세션 쿠키의 이름 (기본값: 'sessionid')
+SESSION_COOKIE_AGE = 1209600  # 세션 만료 시간 (초 단위, 기본값: 2주)
+SESSION_COOKIE_SECURE = False  # HTTPS에서만 쿠키 전송 (로컬 개발 중엔 False)
+SESSION_COOKIE_HTTPONLY = True  # JavaScript로 쿠키 접근 방지 (기본: True)
+
+# 세션 유지 설정
+SESSION_SAVE_EVERY_REQUEST = False  # 매 요청마다 세션 저장 여부 (기본: False)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # 브라우저 닫힐 때 세션 만료 여부 (기본: False)
+
 ROOT_URLCONF = 'ateam.urls'
 
 TEMPLATES = [
