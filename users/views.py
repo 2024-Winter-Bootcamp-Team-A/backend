@@ -51,3 +51,35 @@ class UserLoginAPIView(APIView):
                 return Response({"error": "해당 이메일을 가진 사용자가 존재하지 않습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class UserProfileAPIView(APIView):
+    @swagger_auto_schema(
+        operation_summary="회원정보 조회 API",
+        operation_description="로그인한 사용자의 프로필 정보를 보여줍니다.",
+        responses={
+            200: openapi.Response(
+                description="회원정보 조회 성공",
+                examples={
+                    "application/json": {
+                        "name": "양현민",
+                        "email": "gusals1234@naver.com",
+                    }
+                },
+            ),
+            401: "로그인되지 않은 사용자입니다.",
+        }
+    )
+    def get(self, request):
+        user_id = request.session.get('user_id')
+
+        if not user_id:
+            return Response({"error": "로그인되지 않았습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            user = User.objects.get(id=user_id)
+            return Response(
+                {"name": user.name, "email": user.email},
+                status=status.HTTP_200_OK
+            )
+        except User.DoesNotExist:
+            return Response({"error": "사용자를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
