@@ -43,3 +43,23 @@ class ShortVisitAPIView(APIView):
             return Response({"message": "책 구매 사이트를 방문하였습니다."}, status=status.HTTP_200_OK)
         except Short.DoesNotExist:
             return Response({"error": "숏츠를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+        
+class ShortShareAPIView(APIView):
+    @swagger_auto_schema(
+        operation_summary="링크 공유 수 증가 API",
+        operation_description="특정 숏츠의 링크 공유 수를 증가시킵니다.",
+        responses={
+            200: "숏츠 링크가 복사되었습니다.",
+            404: "숏츠를 찾을 수 없습니다."
+        }
+    )
+    def put(self, request, book_id):
+        try:
+            short = Short.objects.get(book_id=book_id)
+
+            short.share_count += 1
+            short.save()
+
+            return Response({"message": "숏츠 링크가 복사되었습니다."}, status=status.HTTP_200_OK)
+        except Short.DoesNotExist:
+            return Response({"error": "숏츠를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
