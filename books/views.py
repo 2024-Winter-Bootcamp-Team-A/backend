@@ -3,11 +3,35 @@ from rest_framework.response import Response
 from rest_framework import status
 from drf_yasg.utils import swagger_auto_schema
 from .models import Book
-from .serializers import BookSerializer
+from .serializers import BookURLSerializer
 from .utils import fetch_today_book_urls, fetch_and_save_book_details
 
 
-class BookSaveAPIView(APIView):
+class BooksAPIView(APIView):
+    @swagger_auto_schema(
+        operation_summary="책 정보 개별별 저장 API",
+        operation_description=(
+            "이 API는 책 상세페이지 URL로 상세 정보를 크롤링하여 데이터베이스에 저장합니다."
+        ),
+        request_body=BookURLSerializer,
+        responses={
+            201: "책 정보 저장 성공",
+            400: "URL 크롤링 실패 또는 기타 에러",
+        }
+    )
+
+    def post(self, request):
+        serializer = BookURLSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        book_url = serializer.validated_data['book_url']
+        result = fetch_and_save_book_details(book_url)
+        return Response(result)
+
+
+
+
+class BooksBulkAPIView(APIView):
     """
     책 상세 정보 전체 저장 API (POST)
     - POST /api/v1/books/bulk

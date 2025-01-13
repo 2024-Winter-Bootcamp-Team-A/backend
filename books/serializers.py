@@ -2,6 +2,9 @@
 from rest_framework import serializers
 from .models import Book
 
+class BookURLSerializer(serializers.Serializer):
+    book_url = serializers.URLField(required=True)
+
 # 책 정보 저장
 class BookSerializer(serializers.ModelSerializer):
     class Meta:
