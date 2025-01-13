@@ -1,62 +1,32 @@
-#BeautifulSoup로 크롤링 테스트
+# 오늘의 선택 책 URL selenium 크롤링 테스트
 
-import requests
-from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+import time
 
-def get_book_details(book_url):
-    """
-    책 상세 정보를 BeautifulSoup으로 크롤링
-    """
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Accept-Language': 'ko-KR,ko;q=0.9',
-        'Referer': 'https://www.kyobobook.co.kr/'
-    }
+# 웹 드라이버 설정
+driver = webdriver.Chrome()  # ChromeDriver 경로가 환경 변수에 설정되어 있어야 합니다.
+driver.get('https://product.kyobobook.co.kr/today-book/')  # 새로운 '오늘의 선택' 페이지
 
-    response = requests.get(book_url, headers=headers)
-    soup = BeautifulSoup(response.content, 'html.parser')
+try:
+    # "오늘의 선택" 섹션의 책 리스트 URL 가져오기
+    # 이전 방식 (메인 페이지 -> 더보기 클릭)은 주석 처리
+    # today_section = driver.find_element(By.CSS_SELECTOR, "div#welcome_today_book")
+    # more_button = today_section.find_element(By.CSS_SELECTOR, "a.btn_more_plus_text")
+    # more_button.click()
+    # time.sleep(3)  # 페이지 로드 대기
 
-    try:
-        title = soup.select_one("#contents > div.prod_detail_header > div > div.prod_detail_title_wrap > div > div.prod_title_box.auto_overflow_wrap > div.auto_overflow_contents > div > h1 > span").get_text(strip=True)
-    except AttributeError:
-        title = "데이터 없음"
+    # 새로운 '오늘의 선택' 페이지에서 책 리스트 URL 가져오기
+    time.sleep(5)  # 페이지가 완전히 로드되기를 기다림
+    book_elements = driver.find_elements(By.CSS_SELECTOR, "a.prod_info")  # 책 URL 요소
+    book_urls = [element.get_attribute("href") for element in book_elements]
 
-    try:
-        author = soup.select_one("#contents > div.prod_detail_header > div > div.prod_detail_view_wrap > div.prod_detail_view_area > div:nth-child(1) > div > div.prod_author_box.auto_overflow_wrap > div.auto_overflow_contents > div > div").get_text(strip=True)
-    except AttributeError:
-        author = "데이터 없음"
+    # URL 개수 확인 및 출력
+    print(f"크롤링된 책 URL 개수: {len(book_urls)}")
+    print("크롤링된 책 URL 리스트:")
+    for url in book_urls:
+        print(url)
 
-    try:
-        publisher = soup.select_one("#contents > div.prod_detail_header > div > div.prod_detail_view_wrap > div.prod_detail_view_area > div:nth-child(1) > div > div.prod_info_text.publish_date > a").get_text(strip=True)
-    except AttributeError:
-        publisher = "데이터 없음"
-
-    try:
-        story = soup.select_one("div.product_detail_area.book_publish_review p.info_text").get_text(strip=True)
-    except AttributeError:
-        story = "데이터 없음"
-
-    try:
-        # 이미지 크롤링
-        image_tag = soup.select_one("#contents > div.prod_detail_header > div > div.prod_detail_view_wrap > div.prod_detail_view_area > div.col_prod_info.thumb img")
-        if image_tag and 'src' in image_tag.attrs:
-            image = image_tag["src"]
-        else:
-            image = "데이터 없음"
-    except (AttributeError, TypeError):
-        image = "데이터 없음"
-
-    return {
-        "title": title,
-        "author": author,
-        "publisher": publisher,
-        "story": story,
-        "image": image,
-        "book_url": book_url,
-    }
-
-# 테스트
-book_url = "https://product.kyobobook.co.kr/detail/S000000610612"
-details = get_book_details(book_url)
-print(details)
-
+finally:
+    # 브라우저 닫기
+    driver.quit()
