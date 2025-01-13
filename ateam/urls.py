@@ -34,6 +34,7 @@ urlpatterns = [
     path('api/v1/books/', include('books.urls')),
     path('api/v1/users/', include('users.urls')),
     path('api/v1/shorts/', include('shorts.urls')),
+    path('api/v1/shorts/', include('wishes.urls')),
 ]
 
 urlpatterns += [
