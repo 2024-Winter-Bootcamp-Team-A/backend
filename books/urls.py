@@ -1,6 +1,6 @@
 from django.urls import path
-from .views import BookCreateAPIView
+from .views import BookDetailCreateAPIView
 
 urlpatterns = [
-    path('', BookCreateAPIView.as_view(), name='book-create'),  # 명세서에 맞게 경로 수정
+    path('detail/', BookDetailCreateAPIView.as_view(), name='book-detail-create'),  # 책 URL 상세 저장 API
 ]
