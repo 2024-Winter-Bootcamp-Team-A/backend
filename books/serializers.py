@@ -13,7 +13,3 @@ class BookSerializer(serializers.ModelSerializer):
         ]
         
 from rest_framework import serializers
-
-# 책 URL에 대해 상세 정보 저장
-class BookDetailSerializer(serializers.Serializer):
-    book_url = serializers.URLField(required=True)
