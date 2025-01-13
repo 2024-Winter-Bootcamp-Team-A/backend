@@ -10,7 +10,7 @@ class Book(models.Model):
     story = models.TextField(blank=True)
     point = models.CharField(max_length=100, blank=True)
     prompt = models.TextField(blank=True)
-    book_url = models.URLField(max_length=1000, blank=True)
+    book_url = models.URLField(max_length=1000, blank=True, unique=True)
     is_deleted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
