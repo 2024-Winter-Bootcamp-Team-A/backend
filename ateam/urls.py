@@ -36,6 +36,7 @@ urlpatterns = [
     path('api/v1/shorts/', include('shorts.urls')),
     path('api/v1/shorts/', include('wishes.urls')),
     path('api/v1/shorts/', include('records.urls')),
+    path('api/v1/shorts/', include('comments.urls'))
 ]
 
 urlpatterns += [
