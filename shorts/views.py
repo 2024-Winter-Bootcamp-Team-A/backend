@@ -44,6 +44,7 @@ class ShortVisitAPIView(APIView):
         except Short.DoesNotExist:
             return Response({"error": "숏츠를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
         
+        
 class ShortShareAPIView(APIView):
     @swagger_auto_schema(
         operation_summary="링크 공유 수 증가 API",
