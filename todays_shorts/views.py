@@ -8,6 +8,7 @@ from books.models import Book
 from .models import TodaysShorts  # 동일 앱에서 TodaysShorts 가져오기
 from datetime import timedelta  # 날짜 계산
 from django.utils.timezone import now  # 현재 시간
+from drf_yasg import openapi
 
 class TodaysShortsAPIView(APIView):
     @swagger_auto_schema(
@@ -35,11 +36,11 @@ class TodaysShortsAPIView(APIView):
 
             # 3. 오늘의 데이터가 있는 경우
             if todays_shorts:
-                short = Short.objects.get(book=todays_shorts.book_id)
+                book = Book.objects.get(id=todays_shorts.book_id.id)
                 data = {
                     "id": todays_shorts.id,
-                    "sentence": short.point, # 선택한 문장 반환
-                    "image": short.image, # 표지 반환
+                    "sentence": book.point, # 선택한 문장 반환
+                    "image": book.image, # 표지 반환
                 }
                 return Response({"status": "success", "shorts": [data]}, status=status.HTTP_200_OK)
 
@@ -98,4 +99,67 @@ class CreateTodaysShortSAPIView(APIView):
             return Response({"status": "error", "message": "해당 ID의 숏츠를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"status": "error", "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+
+class SavedSentenceCardsAPIView(APIView):
+    @swagger_auto_schema(
+        operation_summary="저장한 문장 카드 전체 조회 API",
+        operation_description="사용자가 저장한 모든 문장 카드를 반환합니다.",
+        responses={
+            200: openapi.Response(
+                description="저장한 문장 카드 조회 성공",
+                examples={
+                    "application/json": {
+                        "status": "success",
+                        "saved_cards": [
+                            {
+                                "id": 1,
+                                "book_title": "소설 A",
+                                "sentence": "이 문장은 참 인상적이다.",
+                                "image": "https://example.com/image1.jpg",
+                                "created_at": "2025-01-01"
+                            },
+                            {
+                                "id": 2,
+                                "book_title": "소설 B",
+                                "sentence": "다른 문장도 기억에 남는다.",
+                                "image": "https://example.com/image2.jpg",
+                                "created_at": "2025-01-02"
+                            }
+                        ]
+                    }
+                }
+            ),
+            401: "로그인되지 않은 사용자입니다.",
+            500: "서버 에러"
+        }
+    )
+    def get(self, request):
+        user_id = request.session.get('user_id')
+
+        if not user_id:
+            return Response({"status": "error", "message": "로그인되지 않았습니다."}, status=status.HTTP_401_UNAUTHORIZED,)
+
+        try:
+            saved_cards = TodaysShorts.objects.filter(
+                user_id=user_id, is_deleted=False
+            ).order_by("-created_at")
+
+            data = []
+            for card in saved_cards:
+                try:
+                    book = card.book_id.book
+                    data.append({
+                        "id": card.id,
+                        "title": book.title,
+                        "sentence": book.point,
+                        "image": book.image,
+                        "created_at": card.created_at,
+                    })
+                except Book.DoesNotExist:
+                    continue
+
+            return Response({"status": "success", "data": data}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"status": "error", "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
