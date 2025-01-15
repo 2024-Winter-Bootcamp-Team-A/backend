@@ -49,7 +49,8 @@ INSTALLED_APPS = [
     'wishes',
     'records',
     'comments',
-    'stats'
+    'stats',
+    'todays_shorts',
 ]
 
 MIDDLEWARE = [
