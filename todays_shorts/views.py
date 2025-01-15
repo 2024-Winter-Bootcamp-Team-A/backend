@@ -2,8 +2,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from drf_yasg.utils import swagger_auto_schema
-from books.models import Book  # books 앱에서 Book 모델 가져오기
-from todays_shorts.models import TodaysShorts  # 동일 앱에서 TodaysShorts 가져오기
+from shorts.models import Short  # books 앱에서 Book 모델 가져오기
+from users.models import User
+from books.models import Book
+from .models import TodaysShorts  # 동일 앱에서 TodaysShorts 가져오기
 from datetime import timedelta  # 날짜 계산
 from django.utils.timezone import now  # 현재 시간
 from drf_yasg import openapi
@@ -34,7 +36,7 @@ class TodaysShortsAPIView(APIView):
 
             # 3. 오늘의 데이터가 있는 경우
             if todays_shorts:
-                book = Book.objects.get(id=todays_shorts.book_id)
+                book = Book.objects.get(id=todays_shorts.book_id.id)
                 data = {
                     "id": todays_shorts.id,
                     "sentence": book.point, # 선택한 문장 반환
@@ -43,7 +45,7 @@ class TodaysShortsAPIView(APIView):
                 return Response({"status": "success", "shorts": [data]}, status=status.HTTP_200_OK)
 
             # 4. 오늘 데이터가 없는 경우
-            random_books = Book.objects.order_by("?")[:2]  # 랜덤으로 2개의 책 선택
+            random_books = Short.objects.order_by("?")[:2]  # 랜덤으로 2개의 책 선택
             random_data = [
                 {
                     "id": book.id,
@@ -68,14 +70,22 @@ class CreateTodaysShortSAPIView(APIView):
     )
     def post(self, request, book_id):
         try:
+            # user_id 가져오기
+            user_id = request.session.get('user_id')
+            if not user_id:
+                return Response({"status": "error", "message": "로그인되지 않은 사용자입니다."}, status=status.HTTP_401_UNAUTHORIZED)
+            
             # 1. book_id에 해당하는 책 조회
+            short = Short.objects.get(book=book_id)
+            user = User.objects.get(id=user_id)
             book = Book.objects.get(id=book_id)
 
             # 2. 이미 오늘의 숏츠가 존재하는지 확인
             existing_entry = TodaysShorts.objects.filter(book_id=book_id).first()
             if not existing_entry:
                 # 3. 없으면 새로운 데이터를 생성
-                TodaysShorts.objects.create(book_id=book_id)
+                TodaysShorts.objects.create(book_id=short,user_id=user)
+    
 
             # 4. 반환할 데이터 구성
             response_data = {
@@ -85,8 +95,8 @@ class CreateTodaysShortSAPIView(APIView):
 
             return Response({"status": "success", "data": response_data}, status=status.HTTP_200_OK)
 
-        except Book.DoesNotExist:
-            return Response({"status": "error", "message": "해당 ID의 책을 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+        except Short.DoesNotExist:
+            return Response({"status": "error", "message": "해당 ID의 숏츠를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"status": "error", "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -127,28 +137,29 @@ class SavedSentenceCardsAPIView(APIView):
         user_id = request.session.get('user_id')
 
         if not user_id:
-            return Response({"status": "error", "message": "로그인되지 않았습니다."}, status=401)
+            return Response({"status": "error", "message": "로그인되지 않았습니다."}, status=status.HTTP_401_UNAUTHORIZED,)
 
         try:
-            saved_cards = (
-                TodaysShorts.objects.filter(user_id=user_id, is_deleted=False)
-                .select_related('book')  
-                .order_by('-created_at') 
-            )
+            saved_cards = TodaysShorts.objects.filter(
+                user_id=user_id, is_deleted=False
+            ).order_by("-created_at")
 
-            result = [
-                {
-                    "id": card.id,
-                    "book_title": card.book.title,
-                    "sentence": card.book.point,
-                    "image": card.book.image,
-                    "created_at": card.created_at.strftime('%Y-%m-%d')
-                }
-                for card in saved_cards
-            ]
+            data = []
+            for card in saved_cards:
+                try:
+                    book = card.book_id.book
+                    data.append({
+                        "id": card.id,
+                        "title": book.title,
+                        "sentence": book.point,
+                        "image": book.image,
+                        "created_at": card.created_at,
+                    })
+                except Book.DoesNotExist:
+                    continue
 
-            return Response({"status": "success", "saved_cards": result}, status=200)
+            return Response({"status": "success", "data": data}, status=status.HTTP_200_OK)
 
         except Exception as e:
-            return Response({"status": "error", "message": str(e)}, status=500)
-        
+            return Response({"status": "error", "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
