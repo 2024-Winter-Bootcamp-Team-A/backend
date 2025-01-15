@@ -37,7 +37,8 @@ urlpatterns = [
     path('api/v1/shorts/', include('wishes.urls')),
     path('api/v1/shorts/', include('records.urls')),
     path('api/v1/shorts/', include('comments.urls')),
-    path('api/v1/stats/', include('stats.urls'))
+    path('api/v1/stats/', include('stats.urls')),
+    path('api/v1/todays-shorts/', include('todays_shorts.urls')),
 ]
 
 urlpatterns += [
