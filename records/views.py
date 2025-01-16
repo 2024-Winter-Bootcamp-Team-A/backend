@@ -39,6 +39,8 @@ class RecordAPIView(APIView):
         except Book.DoesNotExist:
             return Response({"error": "책을 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
 
+
+class RecordsAPIView(APIView):
     @swagger_auto_schema(
         operation_summary="시청 기록 전체 조회 API",
         operation_description="사용자의 시청 기록을 반환합니다.",
