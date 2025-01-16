@@ -74,7 +74,9 @@ class WishAPIView(APIView):
             return Response({"error": "사용자를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
         except Book.DoesNotExist:
             return Response({"error": "책을 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
-        
+
+
+class WishesAPIView(APIView):
     @swagger_auto_schema(
         operation_summary="위시리스트 전체 조회 API",
         operation_description="사용자가 위시리스트에 추가한 모든 책을 반환합니다.",
