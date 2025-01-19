@@ -4,3 +4,5 @@ python-dotenv
 drf_yasg
 psycopg2
 djangorestframework
+selenium
+bs4
