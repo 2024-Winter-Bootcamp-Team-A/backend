@@ -14,50 +14,57 @@ class TodaysShortsAPIView(APIView):
     @swagger_auto_schema(
         operation_summary="오늘의 숏츠 조회 API",
         operation_description=(
-            "오늘 생성된 숏츠 데이터를 조회합니다."
+            "로그인한 유저의 오늘 생성된 숏츠 데이터를 조회합니다."
             "오늘 데이터가 없는 경우, 랜덤으로 2개의 문장을 반환합니다."
         ),
         responses={
             200: "성공적으로 숏츠 데이터를 반환했습니다.",
+            401: "로그인되지 않은 사용자입니다.",
             500: "서버 에러",
         },
     )
     def get(self, request):
         try:
-            # 1. 오늘 날짜 계산
+            # 1. user_id 확인
+            user_id = request.session.get('user_id')
+            if not user_id:
+                return Response({"status": "error", "message": "로그인되지 않은 사용자입니다."}, status=status.HTTP_401_UNAUTHORIZED)
+
+            # 2. 오늘 날짜 계산
             today_start = now().replace(hour=0, minute=0, second=0, microsecond=0)
             today_end = today_start + timedelta(days=1)
 
-            # 2. 오늘의 숏츠 조회
+            # 3. 오늘의 숏츠 조회
             todays_shorts = TodaysShorts.objects.filter(
+                user_id=user_id, # 현재 유저의 데이터만 조회
                 created_at__range=(today_start, today_end),  # 오늘 날짜 범위
                 is_deleted=False,  # 삭제되지 않은 데이터
             ).first()
 
-            # 3. 오늘의 데이터가 있는 경우
+            # 4. 오늘의 데이터가 있는 경우
             if todays_shorts:
-                book = Book.objects.get(id=todays_shorts.book_id.id)
+                book = todays_shorts.book_id
                 data = {
-                    "id": todays_shorts.id,
+                    "id": book.id,
                     "sentence": book.point, # 선택한 문장 반환
                     "image": book.image, # 표지 반환
                 }
                 return Response({"status": "success", "shorts": [data]}, status=status.HTTP_200_OK)
-
+            
             # 4. 오늘 데이터가 없는 경우
-            random_books = Short.objects.order_by("?")[:2]  # 랜덤으로 2개의 책 선택
+            random_books = Book.objects.order_by("?")[:2]  # 랜덤으로 2개의 책 선택
             random_data = [
                 {
                     "id": book.id,
-                    "sentence": book.point, # 랜덤 문장 반환
+                    "sentence": book.point if book.point else f"{book.title} - 테스트 문장입니다.",  # 랜덤 문장 반환
+                    "image": book.image,
                 } for book in random_books
             ]
             return Response({"status": "success", "shorts": random_data}, status=status.HTTP_200_OK)
 
         except Exception as e:
-            # 에러 발생 시 처리
             return Response({"status": "error", "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+        
 class CreateTodaysShortSAPIView(APIView):
     @swagger_auto_schema(
         operation_summary="오늘의 숏츠 저장 API",
@@ -75,30 +82,36 @@ class CreateTodaysShortSAPIView(APIView):
             if not user_id:
                 return Response({"status": "error", "message": "로그인되지 않은 사용자입니다."}, status=status.HTTP_401_UNAUTHORIZED)
             
-            # 1. book_id에 해당하는 책 조회
-            short = Short.objects.get(book=book_id)
-            user = User.objects.get(id=user_id)
+            # book_id에 해당하는 책 조회
             book = Book.objects.get(id=book_id)
+            user = User.objects.get(id=user_id)
 
-            # 2. 이미 오늘의 숏츠가 존재하는지 확인
-            existing_entry = TodaysShorts.objects.filter(book_id=book_id).first()
+            # 오늘의 숏츠 저장
+            today_date = now().date()
+            existing_entry = TodaysShorts.objects.filter(
+                user_id=user,
+                book_id=book,
+                created_at__date=today_date
+            ).first()
+
             if not existing_entry:
-                # 3. 없으면 새로운 데이터를 생성
-                TodaysShorts.objects.create(book_id=short,user_id=user)
-    
+                TodaysShorts.objects.create(user_id=user, book_id=book)
 
-            # 4. 반환할 데이터 구성
+            # 반환할 데이터 구성
             response_data = {
                 "image": book.image,
-                "point": book.point,  # 핵심문장
+                "point": book.point if book.point else f"{book.title} - 테스트 문장입니다.",
             }
-
             return Response({"status": "success", "data": response_data}, status=status.HTTP_200_OK)
 
-        except Short.DoesNotExist:
-            return Response({"status": "error", "message": "해당 ID의 숏츠를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+        except Book.DoesNotExist:
+            return Response({"status": "error", "message": "해당 ID의 책을 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"status": "error", "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+
 
 class SavedSentenceCardsAPIView(APIView):
     @swagger_auto_schema(
@@ -162,4 +175,4 @@ class SavedSentenceCardsAPIView(APIView):
 
         except Exception as e:
             return Response({"status": "error", "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
+
