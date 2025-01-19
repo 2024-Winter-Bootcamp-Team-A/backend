@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'comments',
     'stats',
     'todays_shorts',
+    'faqs'
 ]
 
 MIDDLEWARE = [
@@ -106,6 +107,9 @@ DATABASES = {
         ## 로컬로 올릴때는 'localhost'
         'HOST': os.environ.get('POSTGRES_HOST', 'localhost'),
         'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+        'OPTIONS': {
+            'client_encoding': 'UTF8',  # UTF-8 인코딩 강제 설정
+        },
     }
 }
 
