@@ -9,7 +9,6 @@ class ShortRequestSerializer(serializers.ModelSerializer):
         fields = ['book', 'title', 'storage_url']
 
 class ShortIndividualSerializer(serializers.ModelSerializer):
-    book_id = serializers.IntegerField(source='book.id', read_only=True)
     book_url = serializers.CharField(source='book.book_url', read_only=True)  # 직접 참조
     is_wish = serializers.SerializerMethodField()
     wish_count = serializers.SerializerMethodField()
