@@ -51,7 +51,7 @@ class TodaysShortsAPIView(APIView):
                 }
                 return Response({"status": "success", "shorts": [data]}, status=status.HTTP_200_OK)
             
-            # 4. 오늘 데이터가 없는 경우
+            # 5. 오늘 데이터가 없는 경우
             random_books = Book.objects.order_by("?")[:2]  # 랜덤으로 2개의 책 선택
             random_data = [
                 {
@@ -108,10 +108,6 @@ class CreateTodaysShortSAPIView(APIView):
             return Response({"status": "error", "message": "해당 ID의 책을 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"status": "error", "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-
-
 
 class SavedSentenceCardsAPIView(APIView):
     @swagger_auto_schema(
