@@ -6,6 +6,7 @@ from records.models import Record
 from wishes.models import Wish
 from shorts.models import Short
 from books.models import Book
+from todays_shorts.models import TodaysShorts
 from .serializers import UserSerializer, UserLoginSerializer
 from drf_yasg.utils import swagger_auto_schema  # Swagger 관련 데코레이터 추가
 from drf_yasg import openapi  # Swagger를 위한 openapi 모듈
@@ -134,11 +135,11 @@ class UserProfileAPIView(APIView):
 
             # 문장 카드 이미지
             recent_sentence_card = (
-                Short.objects.filter(book__record__user=user)
-                .select_related("book")
+                TodaysShorts.objects.filter(user_id=user_id, is_deleted=False)
+                .select_related("book_id")
                 .order_by("-created_at")[:2]
             )
-            recent_sentence_card_images = [short.book.image for short in recent_sentence_card]
+            recent_sentence_card_images = [card.book_id.image for card in recent_sentence_card]
 
             response_data = {
                 "name": user.name,

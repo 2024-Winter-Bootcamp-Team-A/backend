@@ -3,11 +3,12 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import ShortRequestSerializer, ShortIndividualSerializer, BestShortsSerializer
 from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from .models import Short
 from books.models import Book
 from records.models import Record
 from wishes.models import Wish
-from django.db.models import Count
+from django.db.models import Count, Q
 from comments.models import Comment
 from drf_yasg import openapi
 
@@ -253,3 +254,51 @@ class ShortsFilterAPIView(APIView):
 
         # 4. 결과 반환
         return Response(response_data, status=status.HTTP_200_OK)
+
+
+class ShortsSearchAPIView(APIView):
+    @swagger_auto_schema(
+        operation_summary="숏츠 검색 API",
+        operation_description="책 제목 또는 저자명에 특정 단어나 문장이 포함된 숏츠를 검색합니다.",
+        manual_parameters=[ 
+            openapi.Parameter(
+                'search',  
+                openapi.IN_QUERY, 
+                description="검색어 (책 제목 또는 저자)",
+                type=openapi.TYPE_STRING, 
+                required=True  
+            )
+        ],
+        responses={200: "List of book_id and image", 401: "로그인되지 않았습니다."}
+    )
+    def get(self, request):
+        user_id = request.session.get('user_id')
+
+        if not user_id:
+            return Response({"status": "error", "message": "로그인되지 않았습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # 검색어 가져오기
+        search_query = request.GET.get('search', '').strip()
+
+        if not search_query:
+            return Response({"error": "검색어를 입력해주세요."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 책 제목 또는 저자에서 검색
+        matching_books = Book.objects.filter(
+            Q(title__icontains=search_query) | Q(author__icontains=search_query)
+        )
+
+        # 해당 책에 연결된 숏츠 조회
+        matching_shorts = Short.objects.filter(book__in=matching_books).select_related("book")
+
+        if not matching_shorts.exists():
+            return Response(
+        {"message": "검색 결과가 없습니다.", "results": []}, 
+        status=status.HTTP_200_OK
+    )
+
+        # 결과 리스트 생성
+        result = [{"book_id": short.book.id, "image": short.book.image} for short in matching_shorts]
+
+        return Response(result, status=status.HTTP_200_OK)
+    

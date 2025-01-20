@@ -156,7 +156,7 @@ class SavedSentenceCardsAPIView(APIView):
             data = []
             for card in saved_cards:
                 try:
-                    book = card.book_id.book
+                    book = card.book_id
                     data.append({
                         "id": card.id,
                         "title": book.title,
