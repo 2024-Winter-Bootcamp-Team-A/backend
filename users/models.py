@@ -2,8 +2,8 @@ from django.db import models
 
 class User(models.Model):
     GENDER_CHOICES = [
-        (0, '남자'),
-        (1, '여자'),
+        (0, 'male'),
+        (1, 'female'),
     ]
     name = models.CharField(max_length=10)
     email = models.EmailField(unique=True, max_length=20)
