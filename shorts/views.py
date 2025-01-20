@@ -132,6 +132,45 @@ class ShortIndividualAPIView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+class ShortIndividualsAPIView(APIView):
+    @swagger_auto_schema(
+        operation_summary="숏츠 개별 조회 2 API",
+        operation_description="특정 book_url에 해당하는 숏츠 정보를 반환합니다.",
+        manual_parameters=[  
+            openapi.Parameter(
+                'book_url',  
+                openapi.IN_QUERY, 
+                description="조회할 책의 URL",
+                type=openapi.TYPE_STRING, 
+                required=True  # 필수 값 지정
+            )
+        ],
+        responses={200: ShortIndividualSerializer()}
+    )
+    def get(self, request):
+        user_id = request.session.get('user_id')
+
+        if not user_id:
+            return Response({"error": "로그인되지 않았습니다."})
+        
+        book_url = request.GET.get('book_url')
+
+        if not book_url:
+            return Response({"error": "book_url을 입력해주세요."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            book = Book.objects.get(book_url=book_url)
+            short = Short.objects.get(book=book)
+
+            serializer = ShortIndividualSerializer(short, context={"request": request})
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except Book.DoesNotExist:
+            return Response({"error": "해당 book_url로 책을 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+
+        except Short.DoesNotExist:
+            return Response({"error": "해당 book_url로 숏츠를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
 
 class BestShortsAPIView(APIView):
 
