@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import ShortsAPIView, ShortVisitAPIView, ShortShareAPIView, ShortDetailAPIView, ShortIndividualAPIView, BestShortsAPIView
+from .views import ShortsAPIView, ShortVisitAPIView, ShortShareAPIView, ShortDetailAPIView, ShortIndividualAPIView, BestShortsAPIView, ShortsFilterAPIView
 
 urlpatterns = [
     path('', ShortsAPIView.as_view()),
@@ -8,4 +8,5 @@ urlpatterns = [
     path('<int:book_id>/detail', ShortDetailAPIView.as_view(), name ='short-detail-api'),
     path('<int:book_id>/individual', ShortIndividualAPIView.as_view(), name ='short-individual-api'),
     path('best', BestShortsAPIView.as_view(), name='best-shorts-api'),
+    path('shorts',ShortsFilterAPIView.as_view(), name="shorts-filter"),
 ]

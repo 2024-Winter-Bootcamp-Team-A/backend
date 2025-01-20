@@ -9,6 +9,8 @@ from records.models import Record
 from wishes.models import Wish
 from django.db.models import Count
 from comments.models import Comment
+from drf_yasg import openapi
+
 
 class ShortsAPIView(APIView):
 
@@ -48,7 +50,7 @@ class ShortVisitAPIView(APIView):
         except Short.DoesNotExist:
             return Response({"error": "숏츠를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
         
-        
+
 class ShortShareAPIView(APIView):
     @swagger_auto_schema(
         operation_summary="링크 공유 수 증가 API",
@@ -173,3 +175,81 @@ class BestShortsAPIView(APIView):
         serializer = BestShortsSerializer(best_short)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ShortsFilterAPIView(APIView):
+    @swagger_auto_schema(
+        operation_summary="숏츠 조건별 조회 API",
+        operation_description="각 타이틀(조회수, 위시리스트, 댓글)에 따라 상위 10개의 책 ID, 이미지 URL을 반환합니다.",
+        manual_parameters=[
+            openapi.Parameter(
+                "title", openapi.IN_QUERY, 
+                description="조회 기준 (조회수, 위시, 댓글)", 
+                type=openapi.TYPE_STRING,
+                enum=["조회수", "위시", "댓글"]
+            ),
+            openapi.Parameter(
+                "limit", openapi.IN_QUERY, 
+                description="반환할 데이터 개수 (기본값 10)", 
+                type=openapi.TYPE_INTEGER
+            ),
+        ],
+        responses={
+            200: "성공적으로 데이터를 반환했습니다.",
+            400: "Invalid parameters"
+        }
+    )
+    def get(self, request):
+        """
+        쿼리 파라미터:
+        - title: 조회 기준 (조회수, 위시, 댓글 중 하나)
+        - limit: 반환 데이터 개수 (기본값 10)
+        """
+
+        # 1. 쿼리 파라미터 가져오기
+        title = request.query_params.get("title")  # 요청된 기준 (조회수, 위시, 댓글)
+        limit = int(request.query_params.get("limit", 10))  # 기본값 10
+
+        # 2. title 값 검증
+        if title not in ["조회수", "위시", "댓글"]:
+            return Response({"error": "Invalid title parameter. Use '조회수', '위시', or '댓글'."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 3. 요청된 기준에 따라 데이터 필터링
+        if title == "조회수":
+            # Record 테이블에서 조회수 집계
+            records = (
+                Record.objects.values("book_id")  # book_id 기준으로 그룹화
+                .annotate(count=Count("id"))  # book_id별로 Record 수를 계산
+                .order_by("-count")[:limit]  # 조회수가 많은 순으로 정렬 후 상위 limit개 가져오기
+            )
+            response_data = [
+                {"book_id": record["book_id"], "image": Book.objects.get(id=record["book_id"]).image}
+                for record in records
+            ]
+
+        elif title == "위시":
+            # Wish 테이블에서 위시리스트 집계
+            wishes = (
+                Wish.objects.values("book_id")
+                .annotate(count=Count("id"))
+                .order_by("-count")[:limit]  # 위시리스트 추가가 많은 순으로 정렬 후 상위 limit개 가져오기
+            )
+            response_data = [
+                {"book_id": wish["book_id"], "image": Book.objects.get(id=wish["book_id"]).image}
+                for wish in wishes
+            ]
+
+        elif title == "댓글":
+            # Comment 테이블에서 댓글 집계
+            comments = (
+                Comment.objects.values("book_id")
+                .annotate(count=Count("id"))
+                .order_by("-count")[:limit]  # 댓글 수가 많은 순으로 정렬 후 상위 limit개 가져오기
+            )
+            response_data = [
+                {"book_id": comment["book_id"], "image": Book.objects.get(id=comment["book_id"]).image}
+                for comment in comments
+            ]
+
+        # 4. 결과 반환
+        return Response(response_data, status=status.HTTP_200_OK)
