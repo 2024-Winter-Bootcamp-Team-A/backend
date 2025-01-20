@@ -335,3 +335,60 @@ class MostCommentedAPIView(APIView):
             "age_stats": full_age_stats,
             "date_stats": full_date_stats
         }, status=status.HTTP_200_OK)
+
+
+class MostPopularAPIView(APIView):
+    @swagger_auto_schema(
+        operation_summary="Most Popular Shorts API",
+        operation_description="조회수, 위시리스트, 댓글 기준으로 각각 1등인 책의 ID와 이미지 URL을 반환합니다.",
+        responses={
+            200: openapi.Response(
+                description="성공적으로 데이터를 반환합니다.",
+                examples={
+                    "application/json": {
+                        "most_viewed": {"book_id": 1, "image": "https://example.com/image1.jpg"},
+                        "most_wished": {"book_id": 2, "image": "https://example.com/image2.jpg"},
+                        "most_commented": {"book_id": 3, "image": "https://example.com/image3.jpg"}
+                    }
+                }
+            ),
+            404: "데이터 없음",
+        }
+    )
+    def get(self, request):
+        # 조회수 기준 1등
+        most_viewed_short = Short.objects.annotate(
+            total_views=Count('book__record')
+        ).order_by('-total_views').first()
+
+        most_viewed_data = {
+            "book_id": most_viewed_short.book.id,
+            "image": most_viewed_short.book.image
+        } if most_viewed_short else None
+
+        # 위시리스트 기준 1등
+        most_wished_short = Short.objects.annotate(
+            total_wishes=Count('book__wish')
+        ).order_by('-total_wishes').first()
+
+        most_wished_data = {
+            "book_id": most_wished_short.book.id,
+            "image": most_wished_short.book.image
+        } if most_wished_short else None
+
+        # 댓글 기준 1등
+        most_commented_short = Short.objects.annotate(
+            total_comments=Count('book__comments')
+        ).order_by('-total_comments').first()
+
+        most_commented_data = {
+            "book_id": most_commented_short.book.id,
+            "image": most_commented_short.book.image
+        } if most_commented_short else None
+
+        # 응답 데이터 반환
+        return Response({
+            "most_viewed": most_viewed_data,
+            "most_wished": most_wished_data,
+            "most_commented": most_commented_data
+        }, status=status.HTTP_200_OK)
