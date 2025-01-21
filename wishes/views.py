@@ -86,22 +86,8 @@ class WishesAPIView(APIView):
                 examples={
                     "application/json": {
                         "wishlist": [
-                            {
-                                "title": "소설 A",
-                                "author": "작가 A",
-                                "publisher": "출판사 A",
-                                "category": "소설",
-                                "book_url": "https://example.com/book1",
-                                "short_url": "https://example.com/short1.mp4"
-                            },
-                            {
-                                "title": "소설 B",
-                                "author": "작가 B",
-                                "publisher": "출판사 B",
-                                "category": "에세이",
-                                "book_url": "https://example.com/book2",
-                                "short_url": None
-                            }
+                            { "image": "https://example.com/image1.jpg" },
+                            { "image": "https://example.com/image2.jpg" }
                         ]
                     }
                 }
@@ -114,24 +100,8 @@ class WishesAPIView(APIView):
         if not user_id:
             return Response({"error": "로그인되지 않았습니다."}, status=401)
 
-        try:
-            user = User.objects.get(id=user_id)
-            wishlist = Wish.objects.filter(user=user).select_related("book", "book__short")
+        wishlist = Wish.objects.filter(user_id=user_id).select_related("book")
 
-            result = []
-            for wish in wishlist:
-                book = wish.book
-                short = Short.objects.filter(book=book).first()
-                result.append({
-                    "title": book.title,
-                    "author": book.author,
-                    "publisher": book.publisher,
-                    "category": book.category,
-                    "book_url": book.book_url,
-                    "short_url": short.storage_url if short else None  
-                })
+        images = [{"image": wish.book.image} for wish in wishlist]
 
-            return Response({"wishlist": result}, status=200)
-
-        except User.DoesNotExist:
-            return Response({"error": "사용자를 찾을 수 없습니다."}, status=404)   
+        return Response({"wishlist": images}, status=200)
