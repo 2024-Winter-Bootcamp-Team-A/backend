@@ -51,22 +51,8 @@ class RecordsAPIView(APIView):
                     "application/json": {
                         "status": "success",
                         "records": [
-                            {
-                                "book_title": "소설 A",
-                                "category": "소설",
-                                "image": "https://example.com/image1.jpg",
-                                "book_url": "https://example.com/book1",
-                                "short_url": "https://example.com/short1",
-                                "viewed_at": "2025-01-01"
-                            },
-                            {
-                                "book_title": "소설 B",
-                                "category": "시/에세이",
-                                "image": "https://example.com/image2.jpg",
-                                "book_url": "https://example.com/book2",
-                                "short_url": "https://example.com/short2",
-                                "viewed_at": "2025-01-02"
-                            }
+                            { "image": "https://example.com/image1.jpg" },
+                            { "image": "https://example.com/image2.jpg" }
                         ]
                     }
                 }
@@ -75,35 +61,14 @@ class RecordsAPIView(APIView):
             500: "서버 에러"
         }
     )
-    def get(self, request, book_id=None):
+    def get(self, request):
         user_id = request.session.get('user_id')
 
         if not user_id:
             return Response({"status": "error", "message": "로그인되지 않았습니다."}, status=401)
 
-        try:
-            if book_id:
-                records = Record.objects.filter(user_id=user_id, book_id=book_id).select_related('book').order_by('-created_at')
-            else:
-                records = (
-                Record.objects.filter(user_id=user_id)
-                .select_related('book') 
-                .order_by('-created_at')
-            )
+        records = Record.objects.filter(user_id=user_id).select_related('book').order_by('-created_at')
 
-            result = [
-                {
-                    "book_title": record.book.title,
-                    "category": record.book.category,
-                    "image": record.book.image,
-                    "book_url": record.book.book_url,
-                    "short_url": Short.objects.filter(book_id=record.book.id).first().storage_url if Short.objects.filter(book_id=record.book.id).exists() else None,
-                    "viewed_at": record.created_at.strftime('%Y-%m-%d') 
-                }
-                for record in records
-            ]
+        images = [{"image": record.book.image} for record in records]
 
-            return Response({"status": "success", "records": result}, status=200)
-
-        except Exception as e:
-            return Response({"status": "error", "message": str(e)}, status=500)
+        return Response({"records": images}, status=200)
