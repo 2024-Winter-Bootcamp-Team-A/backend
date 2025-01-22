@@ -8,3 +8,7 @@ selenium
 bs4
 openai
 boto3
+Pillow
+opencv-python
+numpy
+moviepy

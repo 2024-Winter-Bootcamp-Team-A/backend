@@ -10,6 +10,7 @@ from records.models import Record
 from wishes.models import Wish
 from django.db.models import Count, Q
 from comments.models import Comment
+from .gen_video import generate_dalle_video
 from drf_yasg import openapi
 import json
 
@@ -51,10 +52,12 @@ class ShortsDalleAPIView(APIView):
             return Response({"error": "Book not found"}, status=status.HTTP_404_NOT_FOUND)
         
         story_json = json.loads(book.story)
+        storage_url = generate_dalle_video(3, book.prompt, book.story, str(book.id) + ".mp4")
+
         short_data = {
             'book': book.id,
             'title': story_json["title"],
-            'storage_url': "http://example.com/exam",
+            'storage_url': storage_url,
         }
         short_serializer = ShortRequestSerializer(data=short_data)
 
@@ -167,7 +170,7 @@ class ShortIndividualAPIView(APIView):
 
 class ShortIndividualsAPIView(APIView):
     @swagger_auto_schema(
-        operation_summary="숏츠 개별 조회 2 API",
+        operation_summary="숏츠 개별 조회 API (사이드패널)",
         operation_description="특정 book_url에 해당하는 숏츠 정보를 반환합니다.",
         manual_parameters=[  
             openapi.Parameter(
@@ -259,7 +262,8 @@ class ShortsFilterAPIView(APIView):
                 "title", openapi.IN_QUERY, 
                 description="조회 기준 (조회수, 위시, 댓글)", 
                 type=openapi.TYPE_STRING,
-                enum=["조회수", "위시", "댓글"]
+                enum=["조회수", "위시", "댓글"],
+                required=False
             ),
             openapi.Parameter(
                 "limit", openapi.IN_QUERY, 
@@ -284,11 +288,25 @@ class ShortsFilterAPIView(APIView):
         limit = int(request.query_params.get("limit", 10))  # 기본값 10
 
         # 2. title 값 검증
-        if title not in ["조회수", "위시", "댓글"]:
+        if title is not None and title not in ["조회수", "위시", "댓글"]:
             return Response({"error": "Invalid title parameter. Use '조회수', '위시', or '댓글'."}, status=status.HTTP_400_BAD_REQUEST)
 
         # 3. 요청된 기준에 따라 데이터 필터링
-        if title == "조회수":
+        if not title:
+            # 전체 책 조회
+            shorts = Short.objects.all()
+            response_data = []
+
+            for short in shorts:
+                # Short ID와 동일한 ID를 가진 Book 데이터 조회
+                book = Book.objects.filter(id=short.id).first()
+                if book:
+                    response_data.append({
+                        "book_id": book.id,
+                        "image": book.image
+                    })
+        
+        elif title == "조회수":
             # Record 테이블에서 조회수 집계
             records = (
                 Record.objects.values("book_id")  # book_id 기준으로 그룹화
@@ -323,6 +341,7 @@ class ShortsFilterAPIView(APIView):
                 {"book_id": comment["book_id"], "image": Book.objects.get(id=comment["book_id"]).image}
                 for comment in comments
             ]
+    
 
         # 4. 결과 반환
         return Response(response_data, status=status.HTTP_200_OK)
