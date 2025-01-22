@@ -8,6 +8,11 @@ class ShortRequestSerializer(serializers.ModelSerializer):
         model = Short
         fields = ['book', 'title', 'storage_url']
 
+class DalleShortRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Short
+        fields = ['book']
+
 class ShortIndividualSerializer(serializers.ModelSerializer):
     book_url = serializers.CharField(source='book.book_url', read_only=True)  # 직접 참조
     is_wish = serializers.SerializerMethodField()
