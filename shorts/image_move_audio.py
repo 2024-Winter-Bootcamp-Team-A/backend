@@ -81,6 +81,7 @@ def create_video_with_audio_and_subtitles(images, audio_paths, subtitles, output
     final_clip = final_clip.with_audio(final_audio)
     final_clip.write_videofile(output_path, codec="libx264", audio_codec="aac")
     storage_url = upload_file(output_path)
+    os.remove(output_path)
 
     for temp_path in temp_video_paths:
         os.remove(temp_path)
