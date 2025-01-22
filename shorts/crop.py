@@ -24,7 +24,6 @@ def crop_image(url):
     # RGB에서 BGR로 색상 순서 변경 (OpenCV 형식)
     img_array = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
 
-    cv2.imwrite(f"{url[-50:]}.png", img_array)
 
     return img_array
 
