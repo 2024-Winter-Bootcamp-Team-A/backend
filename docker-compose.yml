@@ -37,6 +37,29 @@ services:
     networks:
       - bookshorts
 
+  celery:
+    container_name: celery
+    build: .
+    command: celery -A ateam worker -l info  # Celery Worker 명령어
+    volumes:
+      - .:/Backend
+    depends_on:
+      - backend
+    networks:
+      - bookshorts
+
+  celery-beat:
+    container_name: celery-beat
+    build: .
+    command: celery -A ateam beat -l info  # Celery Beat 명령어
+    volumes:
+      - .:/Backend
+    depends_on:
+      - celery
+      - backend
+    networks:
+      - bookshorts
+
 networks:
   bookshorts:
     driver: bridge

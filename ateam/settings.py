@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import os
 from pathlib import Path
 from dotenv import load_dotenv 
+from datetime import timedelta
 
 load_dotenv()
 
@@ -51,7 +52,8 @@ INSTALLED_APPS = [
     'comments',
     'stats',
     'todays_shorts',
-    'faqs'
+    'faqs',
+    'django_celery_results', # Django ORM 이용 시에만 사용
 ]
 
 MIDDLEWARE = [
@@ -154,3 +156,19 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Celery 설정
+CELERY_BROKER_URL = 'django://'  # Django의 ORM을 사용한 브로커 설정
+# CELERY_BROKER_URL = 'amqp://localhost' 
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Seoul'  # 시간대 설정
+
+# Celery Beat을 위한 스케줄 설정
+CELERY_BEAT_SCHEDULE = {
+    'crawl-today-books-every-day': {
+        'task': 'books.tasks.crawl_today_books',  # 크롤링 작업 함수
+        'schedule': timedelta(hours=24),  # 하루에 한 번 실행
+    },
+}
