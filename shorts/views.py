@@ -54,8 +54,7 @@ class ShortsDalleAPIView(APIView):
         
         story_json = json.loads(book.story)
         storage_url = generate_dalle_video(3, book.prompt, book.story, str(book.id) + ".mp4")
-        file_path = os.path.join(os.path.dirname(__file__), str(book.id) + ".mp4")
-        os.remove(file_path)
+        
 
         short_data = {
             'book': book.id,
