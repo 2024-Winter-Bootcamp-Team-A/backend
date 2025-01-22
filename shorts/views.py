@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import ShortRequestSerializer, ShortIndividualSerializer, BestShortsSerializer
+from .serializers import ShortRequestSerializer, ShortIndividualSerializer, BestShortsSerializer, DalleShortRequestSerializer
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from .models import Short
@@ -11,6 +11,7 @@ from wishes.models import Wish
 from django.db.models import Count, Q
 from comments.models import Comment
 from drf_yasg import openapi
+import json
 
 
 class ShortsAPIView(APIView):
@@ -28,6 +29,38 @@ class ShortsAPIView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class ShortsDalleAPIView(APIView):
+
+    @swagger_auto_schema(
+        operation_summary="숏츠 저장 API, 근데 이제 DALLE를 곁들인",
+        operation_description="영상을 생성할 때마다 돈이 사라지는 마술을 경험하세요. 상당히 비쌉니다.",
+        request_body=DalleShortRequestSerializer,
+        responses={201: "숏츠 생성을 완료했습니다.",400:"error"}
+    )
+    def post(self, request):
+        serializer = DalleShortRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({"error": "book_is not valid"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        book = serializer.validated_data["book"]
+        if not book:
+            return Response({"error": "Book not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        story_json = json.loads(book.story)
+        short_data = {
+            'book': book.id,
+            'title': story_json["title"],
+            'storage_url': "http://example.com/exam",
+        }
+        short_serializer = ShortRequestSerializer(data=short_data)
+
+        if short_serializer.is_valid():
+            short_serializer.save()
+            return Response(short_serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     

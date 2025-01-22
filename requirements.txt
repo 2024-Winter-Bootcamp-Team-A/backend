@@ -6,3 +6,5 @@ psycopg2
 djangorestframework
 selenium
 bs4
+openai
+boto3
