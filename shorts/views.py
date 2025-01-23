@@ -169,6 +169,27 @@ class ShortIndividualAPIView(APIView):
                 {"error": "해당 book_id로 숏츠를 찾을 수 없습니다."},
                 status=status.HTTP_404_NOT_FOUND
             )
+    @swagger_auto_schema(
+        operation_summary="숏츠 삭제 API",
+        operation_description="특정 숏츠를 삭제합니다.",
+        responses={
+            200: openapi.Response("숏츠가 삭제되었습니다."),
+            404: "숏츠을 찾을 수 없습니다.",
+            401: "인증 실패"
+        }
+    )
+    def delete(self, request, book_id):
+
+        try:
+            book = Book.objects.get(id = book_id)
+            short = Short.objects.get(book=book)
+            short.delete()
+            return Response({"message": "숏츠가 삭제되었습니다."}, status=status.HTTP_200_OK)
+
+        except Short.DoesNotExist:
+            return Response({"error": "숏츠를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+
+
 
 class ShortIndividualsAPIView(APIView):
     @swagger_auto_schema(
@@ -394,4 +415,3 @@ class ShortsSearchAPIView(APIView):
         result = [{"book_id": short.book.id, "image": short.book.image} for short in matching_shorts]
 
         return Response(result, status=status.HTTP_200_OK)
-    
