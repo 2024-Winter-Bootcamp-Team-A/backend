@@ -56,6 +56,27 @@ class BooksAPIView(APIView):
         return Response({"success": False, "error": book_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class BookAPIView(APIView):
+    @swagger_auto_schema(
+        operation_summary="책 삭제 API",
+        operation_description="특정 책을 삭제합니다.",
+        responses={
+            200: "책을 삭제되었습니다.",
+            404: "책을 찾을 수 없습니다.",
+            401: "인증 실패"
+        }
+    )
+    def delete(self, request, book_id):
+        try:
+            book = Book.objects.get(id = book_id)
+            book.delete()
+            return Response({"message": "책이이 삭제되었습니다."}, status=status.HTTP_200_OK)
+
+        except Book.DoesNotExist:
+            return Response({"error": "책을 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+
+
+
 
 class BooksGPTAPIView(APIView):
     @swagger_auto_schema(
