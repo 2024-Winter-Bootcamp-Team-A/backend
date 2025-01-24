@@ -85,14 +85,10 @@ def fetch_and_save_book_details(book_url):
             "story": story.get_text(strip=True) if story else "데이터 없음",
             "image": image_tag["src"] if image_tag and 'src' in image_tag.attrs else "데이터 없음",
             "book_url": book_url,
-        }
+        } 
 
         # 데이터 저장
-        book_serializer = BookSerializer(data=book_data)
-        if book_serializer.is_valid():
-            book_serializer.save()
-            return {"success": True, "data": book_serializer.data}
-        return {"success": False, "error": book_serializer.errors}
+        return BookSerializer(data=book_data)
 
     except Exception as e:
         print(f"[ERROR] Failed to fetch book details for {book_url}: {e}")

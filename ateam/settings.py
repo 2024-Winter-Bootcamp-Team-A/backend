@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-zforpki+sn5v3tbq%7_yo_rjf4^wd7=)vw3=fu$h^h=ujmiwv&
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -65,6 +65,14 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+
+
+CORS_ALLOWED_ORIGINS = [
+    "https://www.kyobobook.co.kr/",
+]
+
+CORS_ALLOW_ALL_ORIGINS: True
 
 # 세션 쿠키 설정
 SESSION_COOKIE_NAME = 'sessionid'  # 세션 쿠키의 이름 (기본값: 'sessionid')
