@@ -40,6 +40,7 @@ urlpatterns = [
     path('api/v1/stats/', include('stats.urls')),
     path('api/v1/todayshort/', include('todays_shorts.urls')),
     path('api/v1/faqs/', include('faqs.urls')),
+    path('', include('django_prometheus.urls')),
 ]
 
 urlpatterns += [
