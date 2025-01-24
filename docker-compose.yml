@@ -60,6 +60,27 @@ services:
     networks:
       - bookshorts
 
+  cadvisor-monitoring:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: cadvisor-monitoring
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro 
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - bookshorts
+
+  node-exporter-monitoring:
+    image: prom/node-exporter:v1.6.1
+    container_name: node-exporter-monitoring
+    ports:
+      - "9100:9100"
+    networks:
+      - bookshorts
+
 networks:
   bookshorts:
     driver: bridge
