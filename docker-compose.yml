@@ -22,9 +22,9 @@ services:
     build: ./
     command: >
       sh -c "
+        gunicorn --bind 0.0.0.0:8000 ateam.wsgi:application
         python manage.py makemigrations &&
-        python manage.py migrate && 
-        python manage.py runserver 0.0.0.0:8000
+        python manage.py migrate
       "
     ports:
       - "8000:8000"
@@ -36,7 +36,76 @@ services:
       - db
     networks:
       - bookshorts
+    labels:
+      logging: "promtail" #라벨링
+      logging_jobname: "backendlogs"
+
+  traefik:
+      image: traefik:v2.9
+      command:
+        - "--api.insecure=true"
+        - "--providers.docker=true" 
+        - "--providers.docker.exposedbydefault=false"
+        - "--entrypoints.web.address=:80"
+        - "--log.level=INFO"
+        - "--accesslog=true"
+        # - "--accesslog.filepath=/traefik/logs/access.log" # 여기부터 중요합니다
+        - "--accesslog.bufferingsize=100"
+        - "--accesslog.format=json"
+        - "--accesslog.fields.defaultmode=keep"
+        - "--accesslog.fields.headers.defaultmode=keep"
+        - "--accesslog.fields.headers.names.X-Forwarded-For=keep" # 여기 까지
+        - "--api.dashboard=true"
+        - "--metrics.prometheus=true"
+        - "--metrics.prometheus.buckets=0.100000, 0.300000, 1.200000, 5.000000"
+        - "--metrics.prometheus.addEntryPointsLabels=true"
+        - "--metrics.prometheus.addServicesLabels=true"
+        - "--entryPoints.metrics.address=:8091"
+        - "--metrics.prometheus.entryPoint=metrics"
+      ports:
+        - "80:80"
+        - "8080:8080"
+      volumes:
+        - "/var/run/docker.sock:/var/run/docker.sock"
+        # - "traefik_logs:/traefik/logs/" #이 볼륨은 파일비트랑 공유를 할겁니다
+      labels:
+        logging: "promtail" #라벨링
+        logging_jobname: "traefiklogs"
+      # networks:
+      #   - bookshorts # 백엔드와 연결을 위해
+      #   - elk # 키바나 접속 을 위해 kibana.도메인 그런식
+
+
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - 3100:3100
+    command: -config.file=/etc/loki/local-config.yaml #기본 설정
+
+  promtail:
+    image:  grafana/promtail:latest
+    container_name: promtail
+    volumes:
+      - ./promtail/config.yaml:/etc/promtail/docker-config.yaml
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro #도커 로그
+      - /var/run/docker.sock:/var/run/docker.sock #도커 소켓 (디몬)
+    command:
+      - -config.file=/etc/promtail/docker-config.yaml #설정파일
+      - -config.expand-env=true #환경변수 수집용. 안해도 됩니다.
+    depends_on:
+      - loki
+  grafana: #서비스 이름
+    image: grafana/grafana:9.5.20 #이미지 이름:태그. 태그는 latest등등도 괜찮습니다.
+    container_name: grafana #컨테이너 이름. 아무거나 괜찮습니다
+    volumes:
+      - ./grafana:/etc/grafana/provisioning #그라파나 설정(config) 볼륨. 대부분 불필요 합지만 놔두시는게 좋습니다.
+      - ./grafana/data:/var/lib/grafana #그라파나 대시보드 데이터. 이걸 설정 해둬야지 가상 볼륨을 날리셔도 대시보드들이 남아있습니다.
+    ports:
+      - "3000:3000" #그라파나는 기본적으로 3000번 포트 입니다
+
 
 networks:
   bookshorts:
+    driver: bridge
+  elk:
     driver: bridge
