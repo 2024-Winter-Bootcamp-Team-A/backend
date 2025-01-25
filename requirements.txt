@@ -15,4 +15,5 @@ Pillow
 opencv-python
 numpy
 moviepy
+gunicorn
 django-prometheus
