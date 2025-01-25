@@ -22,9 +22,9 @@ services:
     build: ./
     command: >
       sh -c "
+        gunicorn --bind 0.0.0.0:8000 ateam.wsgi:application
         python manage.py makemigrations &&
-        python manage.py migrate && 
-        python manage.py runserver 0.0.0.0:8000
+        python manage.py migrate
       "
     ports:
       - "8000:8000"
@@ -36,6 +36,70 @@ services:
       - db
     networks:
       - bookshorts
+    labels:
+      logging: "promtail"
+      logging_jobname: "backendlogs"
+
+  traefik:
+      image: traefik:v2.9
+      command:
+        - "--api.insecure=true"
+        - "--providers.docker=true" 
+        - "--providers.docker.exposedbydefault=false"
+        - "--entrypoints.web.address=:80"
+        - "--log.level=INFO"
+        - "--accesslog=true"
+        - "--accesslog.bufferingsize=100"
+        - "--accesslog.format=json"
+        - "--accesslog.fields.defaultmode=keep"
+        - "--accesslog.fields.headers.defaultmode=keep"
+        - "--accesslog.fields.headers.names.X-Forwarded-For=keep"
+        - "--api.dashboard=true"
+        - "--metrics.prometheus=true"
+        - "--metrics.prometheus.buckets=0.100000, 0.300000, 1.200000, 5.000000"
+        - "--metrics.prometheus.addEntryPointsLabels=true"
+        - "--metrics.prometheus.addServicesLabels=true"
+        - "--entryPoints.metrics.address=:8091"
+        - "--metrics.prometheus.entryPoint=metrics"
+      ports:
+        - "80:80"
+        - "8080:8080"
+      volumes:
+        - "/var/run/docker.sock:/var/run/docker.sock"
+      labels:
+        logging: "promtail" 
+        logging_jobname: "traefiklogs"
+
+
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - 3100:3100
+    command: -config.file=/etc/loki/local-config.yaml
+
+  promtail:
+    image:  grafana/promtail:latest
+    container_name: promtail
+    volumes:
+      - ./promtail/config.yaml:/etc/promtail/docker-config.yaml
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock 
+    command:
+      - -config.file=/etc/promtail/docker-config.yaml 
+      - -config.expand-env=true 
+    depends_on:
+      - loki
+  grafana:
+    image: grafana/grafana:9.5.20 
+    container_name: grafana 
+    volumes:
+      - ./grafana:/etc/grafana/provisioning 
+      - ./grafana/data:/var/lib/grafana 
+    ports:
+      - "3000:3000" 
+    networks:
+      - bookshorts
+
 
   prometheus-monitoring:
     image: prom/prometheus:v2.45.6
@@ -49,16 +113,6 @@ services:
     networks:
       - bookshorts
 
-  grafana-monitoring:
-    image: grafana/grafana:9.5.20 
-    container_name: grafana-monitoring 
-    volumes:
-      - ./grafana:/etc/grafana/provisioning 
-      - ./grafana/data:/var/lib/grafana
-    ports:
-      - "3000:3000"
-    networks:
-      - bookshorts
 
   cadvisor-monitoring:
     image: gcr.io/cadvisor/cadvisor:v0.49.1
@@ -83,4 +137,6 @@ services:
 
 networks:
   bookshorts:
+    driver: bridge
+  elk:
     driver: bridge
