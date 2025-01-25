@@ -1,14 +1,24 @@
 from __future__ import absolute_import, unicode_literals
 import os
 from celery import Celery
+import chromedriver_autoinstaller
 
-# 기본 Django 설정을 Celery에 연결
+# Django 설정 파일 로드
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ateam.settings')
 
+# Celery 앱 생성
 app = Celery('ateam')
 
-# Celery는 기본적으로 'django'를 브로커로 사용하도록 설정합니다.
+# Celery에 Django 설정 불러오기
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
-# 등록된 태스크들을 자동으로 발견
+# ChromeDriver를 Celery 워커 시작 전에 미리 설치
+chromedriver_autoinstaller.install()
+
+# Django 앱의 태스크 모듈 자동 탐지
 app.autodiscover_tasks()
+
+
+@app.task(bind=True)
+def debug_task(self):
+    print(f'Request: {self.request!r}')

@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv 
 from datetime import timedelta
+from celery.schedules import crontab
 
 load_dotenv()
 
@@ -54,6 +55,7 @@ INSTALLED_APPS = [
     'todays_shorts',
     'faqs',
     'django_prometheus',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -167,18 +169,18 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Celery 설정
-CELERY_BROKER_URL = 'django://'  # Django의 ORM을 사용한 브로커 설정
-# CELERY_BROKER_URL = 'amqp://localhost' 
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'Asia/Seoul'  # 시간대 설정
 
-# Celery Beat을 위한 스케줄 설정
+
+# RabbitMQ 브로커 설정
+CELERY_BROKER_URL = 'amqp://guest:guest@rabbitmq:5672//'
+
+# Celery Beat 스케줄러
 CELERY_BEAT_SCHEDULE = {
     'crawl-today-books-every-day': {
         'task': 'books.tasks.crawl_today_books',  # 크롤링 작업 함수
-        'schedule': timedelta(hours=24),  # 하루에 한 번 실행
+        'schedule': crontab(hour=0, minute=0)
+        # crontab(minute='*/1'), # 테스트 1분
     },
 }
+
+CELERY_TIMEZONE = 'Asia/Seoul'  # 타임존 설정
