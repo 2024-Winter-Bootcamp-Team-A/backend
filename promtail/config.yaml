@@ -5,28 +5,28 @@ server:
   grpc_listen_port: 0
 
 positions:
-  filename: /tmp/positions.yaml #포지션 파일
+  filename: /tmp/positions.yaml
 
 clients:
-  - url: http://loki:3100/loki/api/v1/push #로키 api 위치. 여기로 로그를 보냅니다
+  - url: http://loki:3100/loki/api/v1/push 
 
 scrape_configs:
   - job_name: flog_scrape
     docker_sd_configs:
-      - host: unix:///var/run/docker.sock # 도커 설정
+      - host: unix:///var/run/docker.sock 
         refresh_interval: 5s
         filters:
           - name: label
-            values: ["logging=promtail"] #컴포즈에 logging=promtail 라벨 있는 곳만 로그 수집
+            values: ["logging=promtail"] 
     relabel_configs:
-      - source_labels: ['__meta_docker_container_name'] #로그 라벨링
+      - source_labels: ['__meta_docker_container_name'] 
         regex: '/(.*)'
         target_label: 'container'
-      - source_labels: ['__meta_docker_container_log_stream'] #로그 라벨링
+      - source_labels: ['__meta_docker_container_log_stream'] 
         target_label: 'logstream'
-      - source_labels: ['__meta_docker_container_label_logging_jobname'] #로그 라벨링
+      - source_labels: ['__meta_docker_container_label_logging_jobname'] 
         target_label: 'job'
-      - source_labels: ['__meta_docker_port_public'] #로그 라벨링
+      - source_labels: ['__meta_docker_port_public'] 
         target_label: 'port'
-      - source_labels: ['__meta_docker_network_ip'] #로그 라벨링
+      - source_labels: ['__meta_docker_network_ip'] 
         target_label: 'ip'
