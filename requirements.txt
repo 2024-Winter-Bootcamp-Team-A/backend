@@ -6,6 +6,9 @@ psycopg2
 djangorestframework
 selenium
 bs4
+chromedriver-autoinstaller
+celery
+django-celery-beat
 openai
 boto3
 Pillow

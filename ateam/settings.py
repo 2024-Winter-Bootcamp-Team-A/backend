@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import os
 from pathlib import Path
 from dotenv import load_dotenv 
+from datetime import timedelta
+from celery.schedules import crontab
 
 load_dotenv()
 
@@ -53,6 +55,7 @@ INSTALLED_APPS = [
     'todays_shorts',
     'faqs',
     'django_prometheus',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -165,3 +168,19 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+
+# RabbitMQ 브로커 설정
+CELERY_BROKER_URL = 'amqp://guest:guest@rabbitmq:5672//'
+
+# Celery Beat 스케줄러
+CELERY_BEAT_SCHEDULE = {
+    'crawl-today-books-every-day': {
+        'task': 'books.tasks.crawl_today_books',  # 크롤링 작업 함수
+        'schedule': crontab(hour=0, minute=0)
+        # crontab(minute='*/1'), # 테스트 1분
+    },
+}
+
+CELERY_TIMEZONE = 'Asia/Seoul'  # 타임존 설정

@@ -34,6 +34,7 @@ services:
       - .env
     depends_on:
       - db
+      - rabbitmq
     networks:
       - bookshorts
     labels:
@@ -63,7 +64,7 @@ services:
         - "--metrics.prometheus.entryPoint=metrics"
       ports:
         - "80:80"
-        - "8080:8080"
+      
       volumes:
         - "/var/run/docker.sock:/var/run/docker.sock"
       labels:
@@ -96,10 +97,46 @@ services:
       - ./grafana:/etc/grafana/provisioning 
       - ./grafana/data:/var/lib/grafana 
     ports:
-      - "3000:3000" 
+      - "3000:3000"
     networks:
       - bookshorts
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672" # RabbitMQ 브로커 포트
+      - "15672:15672" # RabbitMQ 관리 콘솔 포트
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+    - bookshorts
+
+  celery:
+    container_name: celery
+    build: .
+    command: celery -A ateam worker -l info  # Celery Worker 명령어
+    volumes:
+      - .:/Backend
+    depends_on:
+      - rabbitmq
+      - backend
+    networks:
+      - bookshorts
+
+
+  celery-beat:
+    container_name: celery-beat
+    build: .
+    command: celery -A ateam beat -l info  # Celery Beat 명령어
+    volumes:
+      - .:/Backend
+    depends_on:
+      - celery
+      - rabbitmq
+    networks:
+      - bookshorts
 
   prometheus-monitoring:
     image: prom/prometheus:v2.45.6
@@ -118,7 +155,7 @@ services:
     image: gcr.io/cadvisor/cadvisor:v0.49.1
     container_name: cadvisor-monitoring
     ports:
-      - "8080:8080"
+      - "8080:8080" # 외부 포트를 8081로 변경
     volumes:
       - /:/rootfs:ro 
       - /var/run:/var/run:rw

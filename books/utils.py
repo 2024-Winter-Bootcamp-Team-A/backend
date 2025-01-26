@@ -5,6 +5,8 @@ from selenium.webdriver.support import expected_conditions as EC
 import requests
 from bs4 import BeautifulSoup
 from .serializers import BookSerializer
+from selenium.webdriver.chrome.options import Options
+import chromedriver_autoinstaller # 자동으로 chrome 버전 맞춰줌
 import re
 
 
@@ -12,10 +14,21 @@ def fetch_today_book_urls():
     """
     '오늘의 선택' 섹션에서 정확한 책 URL만 가져오는 함수.
     """
-    driver = webdriver.Chrome()
+    # ChromeDriver 자동 설치
+    chromedriver_autoinstaller.install()
+
+    # Headless 모드 설정
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+
+    # ChromeDriver 실행
+    driver = webdriver.Chrome(options=chrome_options)
     driver.get("https://product.kyobobook.co.kr/today-book/")
 
-    book_urls = set()  # 중복 제거를 위한 set 사용
+    book_urls = set()
     try:
         # 페이지 로드 대기
         WebDriverWait(driver, 10).until(
