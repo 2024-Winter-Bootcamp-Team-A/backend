@@ -17,13 +17,14 @@ class ShortIndividualSerializer(serializers.ModelSerializer):
     book_url = serializers.CharField(source='book.book_url', read_only=True)  # 직접 참조
     is_wish = serializers.SerializerMethodField()
     wish_count = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = Short
         fields = [
             'book_id', 'storage_url', 'book_url', 'title',
             'is_deleted', 'created_at', 'updated_at',
-            'is_wish', 'wish_count'
+            'is_wish', 'wish_count', 'image'
         ]
 
     def get_is_wish(self, obj):
@@ -39,6 +40,10 @@ class ShortIndividualSerializer(serializers.ModelSerializer):
     def get_wish_count(self, obj):
         """해당 책의 위시리스트 추가 횟수 반환"""
         return Wish.objects.filter(book=obj.book).count()
+    
+    def get_image(self, obj):
+        book = Book.objects.filter(id=obj.book.id).first()
+        return book.image
 
 
 class BestShortsSerializer(serializers.ModelSerializer):
